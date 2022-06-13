@@ -109,7 +109,7 @@ public class PlaneRenderer {
 
   /**
    * Allocates and initializes OpenGL resources needed by the plane renderer. Must be called on the
-   * OpenGL thread, typically in {@link GLSurfaceView.Renderer#onSurfaceCreated(GL10, EGLConfig)}.
+   * OpenGL thread, typically in .
    *
    * @param context Needed to access shader source and texture PNG.
    * @param gridDistanceTextureName Name of the PNG file containing the grid texture.
@@ -290,98 +290,6 @@ public class PlaneRenderer {
    * @param cameraPerspective The projection matrix, as returned by {@link
    *     Camera#getProjectionMatrix(float[], int, float, float)}
    */
-  public void drawPlanes(Collection<Plane> allPlanes, Pose cameraPose, float[] cameraPerspective) {
-    // Planes must be sorted by distance from camera so that we draw closer planes first, and
-    // they occlude the farther planes.
-    List<SortablePlane> sortedPlanes = new ArrayList<>();
-
-    for (Plane plane : allPlanes) {
-      if (plane.getTrackingState() != TrackingState.TRACKING || plane.getSubsumedBy() != null) {
-        continue;
-      }
-
-      float distance = calculateDistanceToPlane(plane.getCenterPose(), cameraPose);
-      if (distance < 0) { // Plane is back-facing.
-        continue;
-      }
-      sortedPlanes.add(new SortablePlane(distance, plane));
-    }
-    Collections.sort(
-        sortedPlanes,
-        new Comparator<SortablePlane>() {
-          @Override
-          public int compare(SortablePlane a, SortablePlane b) {
-            return Float.compare(b.distance, a.distance);
-          }
-        });
-
-    float[] cameraView = new float[16];
-    cameraPose.inverse().toMatrix(cameraView, 0);
-
-    // Disable depth write.
-    GLES20.glDepthMask(false);
-
-    // Normal alpha blending with premultiplied alpha.
-    GLES20.glEnable(GLES20.GL_BLEND);
-    GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-
-    // Set up the shader.
-    GLES20.glUseProgram(planeProgram);
-
-    // Attach the texture.
-    GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-    GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
-    GLES20.glUniform1i(textureUniform, 0);
-
-    // Shared fragment uniforms.
-    GLES20.glUniform4fv(gridControlUniform, 1, GRID_CONTROL, 0);
-
-    // Enable vertex arrays
-    GLES20.glEnableVertexAttribArray(planeXZPositionAlphaAttribute);
-
-    ShaderUtil.checkGLError(TAG, "Setting up to draw planes");
-
-    for (SortablePlane sortedPlane : sortedPlanes) {
-      Plane plane = sortedPlane.plane;
-      float[] planeMatrix = new float[16];
-      plane.getCenterPose().toMatrix(planeMatrix, 0);
-
-      float[] normal = new float[3];
-      // Get transformed Y axis of plane's coordinate system.
-      plane.getCenterPose().getTransformedAxis(1, 1.0f, normal, 0);
-
-      updatePlaneParameters(
-          planeMatrix, plane.getExtentX(), plane.getExtentZ(), plane.getPolygon());
-
-      // Get plane index. Keep a map to assign same indices to same planes.
-      Integer planeIndex = planeIndexMap.get(plane);
-      if (planeIndex == null) {
-        planeIndex = planeIndexMap.size();
-        planeIndexMap.put(plane, planeIndex);
-      }
-
-      // Each plane will have its own angle offset from others, to make them easier to
-      // distinguish. Compute a 2x2 rotation matrix from the angle.
-      float angleRadians = planeIndex * 0.144f;
-      float uScale = DOTS_PER_METER;
-      float vScale = DOTS_PER_METER * EQUILATERAL_TRIANGLE_SCALE;
-      planeAngleUvMatrix[0] = +(float) Math.cos(angleRadians) * uScale;
-      planeAngleUvMatrix[1] = -(float) Math.sin(angleRadians) * vScale;
-      planeAngleUvMatrix[2] = +(float) Math.sin(angleRadians) * uScale;
-      planeAngleUvMatrix[3] = +(float) Math.cos(angleRadians) * vScale;
-      GLES20.glUniformMatrix2fv(planeUvMatrixUniform, 1, false, planeAngleUvMatrix, 0);
-
-      draw(cameraView, cameraPerspective, normal);
-    }
-
-    // Clean up the state we set
-    GLES20.glDisableVertexAttribArray(planeXZPositionAlphaAttribute);
-    GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-    GLES20.glDisable(GLES20.GL_BLEND);
-    GLES20.glDepthMask(true);
-
-    ShaderUtil.checkGLError(TAG, "Cleaning up after drawing planes");
-  }
 
   // Calculate the normal distance to plane from cameraPose, the given planePose should have y axis
   // parallel to plane's normal, for example plane's center pose or hit test pose.

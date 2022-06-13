@@ -519,13 +519,13 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
             drawAnchor(anchorMatrix, scaleFactor, colorCorrectionRgba);
           }
         }
-        if (anchor == null) {
-          // Visualize planes.
-          planeRenderer.drawPlanes(
-              session.getAllTrackables(Plane.class),
-              camera.getDisplayOrientedPose(),
-              projectionMatrix);
-        }
+//        if (anchor == null) {
+//          // Visualize planes.
+//          planeRenderer.drawPlanes(
+//              session.getAllTrackables(Plane.class),
+//              camera.getDisplayOrientedPose(),
+//              projectionMatrix);
+//        }
         // Update the pose of the anchor (to be) hosted if it can be drawn and render the anchor.
         if (anchor != null && anchor.getTrackingState() == TrackingState.TRACKING) {
           anchorPose = anchor.getPose();
