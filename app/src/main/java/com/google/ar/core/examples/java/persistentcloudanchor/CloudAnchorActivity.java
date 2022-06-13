@@ -90,11 +90,6 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
   protected static final double MIN_DISTANCE = 0.2f;
   protected static final double MAX_DISTANCE = 10.0f;
 
-  static Intent newHostingIntent(Context packageContext) {
-    Intent intent = new Intent(packageContext, CloudAnchorActivity.class);
-    intent.putExtra(EXTRA_HOSTING_MODE, true);
-    return intent;
-  }
 
   static Intent newResolvingIntent(Context packageContext, ArrayList<String> anchorsToResolve) {
     Intent intent = new Intent(packageContext, CloudAnchorActivity.class);
@@ -186,7 +181,7 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
     setContentView(R.layout.cloud_anchor);
     surfaceView = findViewById(R.id.surfaceview);
     displayRotationHelper = new DisplayRotationHelper(this);
-    setUpTapListener();
+//    setUpTapListener();
     // Set up renderer.
     surfaceView.setPreserveEGLContextOnPause(true);
     surfaceView.setEGLContextClientVersion(2);
@@ -207,29 +202,6 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
       currentMode = HostResolveMode.RESOLVING;
     }
     showPrivacyDialog();
-  }
-
-  private void setUpTapListener() {
-    gestureDetector =
-        new GestureDetector(
-            this,
-            new GestureDetector.SimpleOnGestureListener() {
-              @Override
-              public boolean onSingleTapUp(MotionEvent e) {
-                synchronized (singleTapLock) {
-                  if (currentMode == HostResolveMode.HOSTING) {
-                    queuedSingleTap = e;
-                  }
-                }
-                return true;
-              }
-
-              @Override
-              public boolean onDown(MotionEvent e) {
-                return true;
-              }
-            });
-    surfaceView.setOnTouchListener((v, event) -> gestureDetector.onTouchEvent(event));
   }
 
   private void showPrivacyDialog() {
