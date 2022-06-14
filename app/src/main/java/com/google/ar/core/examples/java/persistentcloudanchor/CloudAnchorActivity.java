@@ -320,7 +320,7 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
             float scaleFactor = 1.0f;
             frame.getLightEstimate().getColorCorrection(colorCorrectionRgba, 0);
 
-            String textFiledContent = "";
+            String textFiledContent;
 
             synchronized (anchorLock) {
                 Pose anchorPose;
@@ -347,6 +347,8 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
                             textFiledContent = getString(R.string.got_point, distance,anchor.getName());
 
                             Log.i("Cords", textFiledContent);
+                            String finalTextFiledContent = textFiledContent;
+                            runOnUiThread(() -> userMessageText.setText(finalTextFiledContent));
 
                         } catch (Throwable e) {
                             Log.e(TAG,"Exception showing user text", e);
@@ -354,7 +356,7 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
                     }
                 }
 
-                userMessageText.setText(textFiledContent);
+
             }
 
         } catch (Throwable t) {
@@ -396,15 +398,19 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
                     if (task.isSuccessful()) {
                         List<String> aIds = new ArrayList<>();
                         for (QueryDocumentSnapshot document : task.getResult()) {
-                            aIds.add(document.get("anchorId", String.class));
-                            anchorMap.put(document.get("anchorId", String.class),
-                                    new CloudAnchor(
-                                            document.get("anchorId", String.class),
-                                            document.get("name", String.class),
-                                            document.get("latitude", Double.class),
-                                            document.get("longitude", Double.class),
-                                            document.get("altitude", Double.class)
-                                    ));
+                            try {
+                                anchorMap.put(document.get("anchorId", String.class),
+                                        new CloudAnchor(
+                                                document.getString("anchorId"),
+                                                document.getString("name"),
+                                                document.getDouble("latitude"),
+                                                document.getDouble("longitude"),
+                                                document.getDouble("altitude")
+                                        ));
+                                aIds.add(document.get("anchorId", String.class));
+                            }
+                            catch (NullPointerException ignored){}
+
                         }
 
                         synchronized (anchorLock) {
