@@ -31,12 +31,13 @@
   <string name="user_message_text">User text</string>
 
   <!-- Strings in the resolve options page -->
-  <string name="resolve_an_anchor_text">Resolve anchor(s)</string>
+  <string name="resolve_an_anchor_text">Find destinations</string>
   <string name="resolve_an_anchor_instructions_text">Choose up to 40 anchors to resolve at once</string>
   <string name="select_anchors_text">Select saved anchors</string>
-  <string name="enter_anchor_text">Enter anchor ID(s) manually, separated by commas</string>
+  <string name="enter_anchor_text">Search destinations here</string>
   <string name="enter_anchor_hint">Anchor IDs...</string>
-  <string name="resolve_button_text">Resolve</string>
+  <string name="resolve_button_text">Start</string>
+  <string name="search_button_text">search</string>
 
   <!-- Strings used in exceptions -->
   <string name="arcore_unavailable">Please install ARCore.</string>

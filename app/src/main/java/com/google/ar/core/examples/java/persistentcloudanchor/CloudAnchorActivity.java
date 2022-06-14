@@ -691,7 +691,7 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
           });
     }
 
-    /** Callback function invoked when the user presses the OK button in the Save Anchor Dialog. */
+    /** Callback function invoked when the user presses the OK search_button in the Save Anchor Dialog. */
     private void onAnchorNameEntered(String anchorNickname) {
       saveAnchorToStorage(cloudAnchorId, anchorNickname, sharedPreferences);
       userMessageText.setVisibility(View.GONE);

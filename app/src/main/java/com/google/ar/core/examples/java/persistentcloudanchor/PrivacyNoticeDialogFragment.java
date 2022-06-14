@@ -59,7 +59,7 @@ public class PrivacyNoticeDialogFragment extends DialogFragment {
             new DialogInterface.OnClickListener() {
               @Override
               public void onClick(DialogInterface dialog, int id) {
-                // Send the positive button event back to the host activity
+                // Send the positive search_button event back to the host activity
                 hostResolveListener.onPrivacyNoticeReceived();
               }
             })
