@@ -2,6 +2,8 @@
 
 package com.google.ar.core.examples.java.persistentcloudanchor;
 
+import androidx.annotation.NonNull;
+
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Anchor.CloudAnchorState;
 import com.google.ar.core.Session;
@@ -23,19 +25,11 @@ class CloudAnchorManager {
     void onComplete(Anchor anchor);
   }
 
-  private Session session;
+  private final Session session;
   private final Map<Anchor, CloudAnchorListener> pendingAnchors = new HashMap<>();
 
   CloudAnchorManager(Session session) {
     this.session = Preconditions.checkNotNull(session);
-  }
-
-  /** Hosts an anchor. The {@code listener} will be invoked when the results are available. */
-  synchronized void hostCloudAnchor(Anchor anchor, CloudAnchorListener listener) {
-    Preconditions.checkNotNull(listener, "The listener cannot be null.");
-    // Creating a Cloud Anchor with lifetime  = 1 day. This is configurable up to 365 days.
-    Anchor newAnchor = session.hostCloudAnchorWithTtl(anchor, /* ttlDays= */ 1);
-    pendingAnchors.put(newAnchor, listener);
   }
 
   /** Resolves an anchor. The {@code listener} will be invoked when the results are available. */
@@ -65,7 +59,8 @@ class CloudAnchorManager {
     pendingAnchors.clear();
   }
 
-  private static boolean isReturnableState(CloudAnchorState cloudState) {
+  @org.jetbrains.annotations.Contract(pure = true)
+  private static boolean isReturnableState(@NonNull CloudAnchorState cloudState) {
     switch (cloudState) {
       case NONE:
       case TASK_IN_PROGRESS:

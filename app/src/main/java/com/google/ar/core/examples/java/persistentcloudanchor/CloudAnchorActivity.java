@@ -1,7 +1,6 @@
 package com.google.ar.core.examples.java.persistentcloudanchor;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
@@ -59,16 +58,6 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
     private static final String EXTRA_ANCHORS_TO_RESOLVE = "persistentcloudanchor.anchors_to_resolve";
     private static final String ALLOW_SHARE_IMAGES_KEY = "ALLOW_SHARE_IMAGES";
     protected static final String PREFERENCE_FILE_KEY = "CLOUD_ANCHOR_PREFERENCES";
-    protected static final String HOSTED_ANCHOR_IDS = "anchor_ids";
-    protected static final String HOSTED_ANCHOR_NAMES = "anchor_names";
-    protected static final String HOSTED_ANCHOR_MINUTES = "anchor_minutes";
-
-    @NonNull
-    static Intent newResolvingIntent(Context packageContext, ArrayList<String> anchorsToResolve) {
-        Intent intent = new Intent(packageContext, CloudAnchorActivity.class);
-        intent.putExtra(EXTRA_ANCHORS_TO_RESOLVE, anchorsToResolve);
-        return intent;
-    }
 
     // Rendering. The Renderers are created here, and initialized when the GL surface is created.
     private GLSurfaceView surfaceView;
