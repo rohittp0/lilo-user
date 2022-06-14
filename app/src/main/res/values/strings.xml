@@ -39,10 +39,9 @@
 
 
   <!-- Strings used in the resolving flow-->
-  <string name="resolving_processing">Look at the location you expect the AR experience to appear.</string>
   <string name="resolving_success">Resolve success!</string>
   <string name="resolving_error">Resolving Error: %1$s</string>
-  <string name="debug_resolving_processing">Attempting to resolve %1$d anchors...</string>
+  <string name="debug_resolving_processing">Attempting to resolve %1$d anchors…</string>
   <string name="debug_resolving_success">Resolved anchors; continuing to refine pose.</string>
   <string name="debug_resolving_error">There was an error during Resolving: %1$s</string>
   <!-- Resolve anchor has no result yet. [CHAR_LIMIT=NONE] -->
@@ -57,4 +56,6 @@
   <string name="learn_more">Learn more</string>
   <!-- Privacy learn more URL. [CHAR_LIMIT=NONE] -->
   <string name="learn_more_url">https://developers.google.com/ar/data-privacy</string>
+  <string name="no_near_point">You are not near any marked points</string>
+  <string name="got_point">Your are %f meters from %s</string>
 </resources>

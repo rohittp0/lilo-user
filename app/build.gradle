@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdkVersion 31
@@ -42,4 +43,5 @@ dependencies {
     implementation 'com.google.guava:guava:27.0.1-android'
     implementation 'com.google.android.gms:play-services-auth:19.2.0'
     implementation 'org.jetbrains:annotations:15.0'
+    implementation 'com.google.firebase:firebase-firestore:24.1.2'
 }

@@ -38,10 +38,15 @@ import com.google.ar.core.exceptions.CameraNotAvailableException;
 import com.google.ar.core.exceptions.UnavailableApkTooOldException;
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
 import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -55,7 +60,6 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceView.Renderer {
     private static final String TAG = CloudAnchorActivity.class.getSimpleName();
-    private static final String EXTRA_ANCHORS_TO_RESOLVE = "persistentcloudanchor.anchors_to_resolve";
     private static final String ALLOW_SHARE_IMAGES_KEY = "ALLOW_SHARE_IMAGES";
     protected static final String PREFERENCE_FILE_KEY = "CLOUD_ANCHOR_PREFERENCES";
 
@@ -89,6 +93,8 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
 
     @GuardedBy("anchorLock")
     private List<String> unresolvedAnchorIds = new ArrayList<>();
+
+    private final Map<String, CloudAnchor> anchorMap = new HashMap<>();
 
     private CloudAnchorManager cloudAnchorManager;
 
@@ -237,7 +243,7 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
         super.onWindowFocusChanged(hasFocus);
         FullScreenHelper.setFullScreenOnWindowFocusChanged(this, hasFocus);
     }
-    
+
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
@@ -314,9 +320,11 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
             float scaleFactor = 1.0f;
             frame.getLightEstimate().getColorCorrection(colorCorrectionRgba, 0);
 
+            String textFiledContent = "";
+
             synchronized (anchorLock) {
                 Pose anchorPose;
-                
+
                 for (Anchor resolvedAnchor : resolvedAnchors) {
                     // Update the poses of resolved anchors that can be drawn and render them.
                     if (resolvedAnchor != null
@@ -327,8 +335,26 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
                         anchorPose.toMatrix(anchorMatrix, 0);
                         // Update and draw the model and its shadow.
                         drawAnchor(anchorMatrix, scaleFactor, colorCorrectionRgba);
+
+                        try {
+                            CloudAnchor anchor = Objects.requireNonNull(anchorMap.get(resolvedAnchor.getCloudAnchorId()));
+                            Pose cameraPose = camera.getPose();
+                            float x = anchorPose.tx() - cameraPose.tx();
+                            float y = anchorPose.ty() - cameraPose.ty();
+                            float z = anchorPose.tz() - cameraPose.tz();
+
+                            double distance = Math.sqrt(x*x+y*y+z*z);
+                            textFiledContent = getString(R.string.got_point, distance,anchor.getName());
+
+                            Log.i("Cords", textFiledContent);
+
+                        } catch (Throwable e) {
+                            Log.e(TAG,"Exception showing user text", e);
+                        }
                     }
                 }
+
+                userMessageText.setText(textFiledContent);
             }
 
         } catch (Throwable t) {
@@ -336,13 +362,13 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
             Log.e(TAG, "Exception on the OpenGL thread", t);
         }
     }
-    
+
 
     private void drawAnchor(float[] anchorMatrix, float scaleFactor, float[] colorCorrectionRgba) {
         anchorObject.updateModelMatrix(anchorMatrix, scaleFactor);
         anchorObject.draw(viewMatrix, projectionMatrix, colorCorrectionRgba);
     }
-    
+
 
     /**
      * Adds a new anchor to the set of resolved anchors.
@@ -355,27 +381,49 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
             }
         }
     }
-    
+
     private void onPrivacyAcceptedForResolve() {
         if (!sharedPreferences.edit().putBoolean(ALLOW_SHARE_IMAGES_KEY, true).commit()) {
             throw new AssertionError("Could not save the user preference to SharedPreferences!");
         }
         createSession();
         ResolveListener resolveListener = new ResolveListener();
-        synchronized (anchorLock) {
-            unresolvedAnchorIds = getIntent().getStringArrayListExtra(EXTRA_ANCHORS_TO_RESOLVE);
-            debugText.setText(getString(R.string.debug_resolving_processing, unresolvedAnchorIds.size()));
-            // Encourage the user to look at a previously mapped area.
-            userMessageText.setText(R.string.resolving_processing);
-            Log.i(
-                    TAG,
-                    String.format(
-                            "Attempting to resolve %d anchor(s): %s",
-                            unresolvedAnchorIds.size(), unresolvedAnchorIds));
-            for (String cloudAnchorId : unresolvedAnchorIds) {
-                cloudAnchorManager.resolveCloudAnchor(cloudAnchorId, resolveListener);
-            }
-        }
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("/maps/fisat/poi")
+                .get()
+                .addOnCompleteListener((task) -> {
+                    if (task.isSuccessful()) {
+                        List<String> aIds = new ArrayList<>();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            aIds.add(document.get("anchorId", String.class));
+                            anchorMap.put(document.get("anchorId", String.class),
+                                    new CloudAnchor(
+                                            document.get("anchorId", String.class),
+                                            document.get("name", String.class),
+                                            document.get("latitude", Double.class),
+                                            document.get("longitude", Double.class),
+                                            document.get("altitude", Double.class)
+                                    ));
+                        }
+
+                        synchronized (anchorLock) {
+                            unresolvedAnchorIds = aIds;
+                            debugText.setText(getString(R.string.debug_resolving_processing, unresolvedAnchorIds.size()));
+                            // Encourage the user to look at a previously mapped area.
+                            Log.i(
+                                    TAG,
+                                    String.format(
+                                            "Attempting to resolve %d anchor(s): %s",
+                                            unresolvedAnchorIds.size(), unresolvedAnchorIds));
+                            for (String cloudAnchorId : unresolvedAnchorIds) {
+                                cloudAnchorManager.resolveCloudAnchor(cloudAnchorId, resolveListener);
+                            }
+                        }
+                    } else {
+                        Log.w(TAG, "Error getting documents.", task.getException());
+                    }
+                });
     }
 
     /* Listens for a resolved anchor. */
