@@ -320,10 +320,12 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
             float scaleFactor = 1.0f;
             frame.getLightEstimate().getColorCorrection(colorCorrectionRgba, 0);
 
-            String textFiledContent;
+            String textFiledContent = "";
 
             synchronized (anchorLock) {
                 Pose anchorPose;
+                double minDistance = 100000;
+                String minName = "";
 
                 for (Anchor resolvedAnchor : resolvedAnchors) {
                     // Update the poses of resolved anchors that can be drawn and render them.
@@ -344,7 +346,13 @@ public class CloudAnchorActivity extends AppCompatActivity implements GLSurfaceV
                             float z = anchorPose.tz() - cameraPose.tz();
 
                             double distance = Math.sqrt(x*x+y*y+z*z);
-                            textFiledContent = getString(R.string.got_point, distance,anchor.getName());
+
+                            if(minDistance > distance || anchor.getName().equals(minName)) {
+                                minDistance = distance;
+                                minName = anchor.getName();
+                                textFiledContent = getString(R.string.got_point, minDistance, minName);
+
+                            }
 
                             Log.i("Cords", textFiledContent);
                             String finalTextFiledContent = textFiledContent;
